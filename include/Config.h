@@ -6,11 +6,9 @@
 // Pin Definitions
 #define LEDO 7
 #define GPKEY 2
-#define RST_PIN 48
-#define SS_PIN 53
+#define PN532_IRQ 2
+#define PN532_RESET 3
 #define DOORPIN 10
-#define JOYDIK A0
-#define JOYYAN A1
 #define SERVOPIN 12
 #define TOUCH_SEND A7
 #define TOUCH_RECEIVE A6

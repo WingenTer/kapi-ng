@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <MFRC522.h>
+#include <Adafruit_PN532.h>
 #include <CapacitiveSensor.h>
 #include <Wire.h>
 
@@ -11,7 +11,7 @@
 #include "AuthManager.h"
 
 // Global Objects
-MFRC522 mfrc522(SS_PIN, RST_PIN);
+Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 CapacitiveSensor touch(TOUCH_SEND, TOUCH_RECEIVE);
 
 // Global State Initialization
@@ -113,11 +113,14 @@ void handleSerial()
 
 void checkRfidHealth()
 {
-  byte v = mfrc522.PCD_ReadRegister(mfrc522.VersionReg);
-  if (v == 0x00 || v == 0xFF)
+  // PN532 doesn't have a simple version register read like MFRC522, 
+  // but we can check if it's still responding to basic commands.
+  uint32_t versiondata = nfc.getFirmwareVersion();
+  if (!versiondata)
   {
-    Serial.println(F("RFID Reader unresponsive! Resetting..."));
-    mfrc522.PCD_Init();
+    Serial.println(F("PN532 Reader unresponsive! Resetting..."));
+    nfc.begin();
+    nfc.SAMConfig();
   }
 }
 
@@ -134,12 +137,16 @@ void setup()
 
   blinker.open();
 
-  SPI.begin();
-  mfrc522.PCD_Init();
-  touch.set_CS_AutocaL_Millis(0xFFFFFFFF);
+  nfc.begin();
+  uint32_t versiondata = nfc.getFirmwareVersion();
+  if (!versiondata) {
+    Serial.print("Didn't find PN532 board");
+  } else {
+    Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX);
+    nfc.SAMConfig();
+  }
 
-  delay(500);
-  mfrc522.PCD_DumpVersionToSerial();
+  touch.set_CS_AutocaL_Millis(0xFFFFFFFF);
 
   state.lastDoorSensorState = digitalRead(DOORPIN);
   display.sensorState(state.lastDoorSensorState);
@@ -204,33 +211,19 @@ void loop()
 
   if (state.doorAutoCloseEnabled)
   {
-    if (analogRead(JOYDIK) < 300 || tchrate > touchThreshold)
+    if (tchrate > touchThreshold)
     {
       if (!state.isDoorOpen) {
         door(true);
       }
     }
-    else if (analogRead(JOYDIK) > 1000)
-    {
-      if (state.isDoorOpen) {
-        door(false);
-      }
-    }
-
-    if (analogRead(JOYYAN) > 1000)
-    {
-      door(true);
-      Serial.println("manual open");
-      while (analogRead(JOYYAN) > 30)
-      {
-        blinker.update();
-      }
-      door(false);
-    }
   }
 
   if (state.doorAutoCloseEnabled && state.isDoorOpen)
   {
+    if (currentSensorState) {
+        state.doorOpenTime = millis(); // Reset timer if door is physically open
+    }
     if (millis() - state.doorOpenTime > state.doorTimeout)
     {
       door(false);
@@ -238,32 +231,43 @@ void loop()
     }
   }
 
-  if (!mfrc522.PICC_IsNewCardPresent())
-    return;
-  if (!mfrc522.PICC_ReadCardSerial())
-    return;
+  uint8_t success;
+  uint8_t uid_raw[] = { 0, 0, 0, 0, 0, 0, 0 };  // Buffer to store the returned UID
+  uint8_t uidLength;                        // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 
-  String uid = String(mfrc522.uid.uidByte[2]) + String(mfrc522.uid.uidByte[3]);
-  Serial.println("New card: " + uid);
+  success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid_raw, &uidLength, 50); // 50ms timeout
 
-  int userIdx = findUser(uid);
+  if (success) {
+    // We only use bytes 2 and 3 for the internal ID logic to match previous MFRC522 format
+    // or we can generate a consistent string representation.
+    String uid = "";
+    if (uidLength >= 4) {
+        // Using the same 2-byte logic as before if that was the intent, 
+        // but typically PN532 uses the whole UID. 
+        // For compatibility with your current findUser, let's keep it similar.
+        uid = String(uid_raw[2]) + String(uid_raw[3]);
+    }
+    
+    Serial.println("New card: " + uid);
 
-  if (userIdx != -1)
-  {
-    String userName = getDynamicName(userIdx);
-    display.showUser(uid, userName);
-    Serial.println("Access granted: " + userName);
-    if (state.doorAutoCloseEnabled && !state.isDoorOpen)
-      door(true);
+    int userIdx = findUser(uid);
+
+    if (userIdx != -1)
+    {
+      String userName = getDynamicName(userIdx);
+      display.showUser(uid, userName);
+      Serial.println("Access granted: " + userName);
+      if (state.doorAutoCloseEnabled && !state.isDoorOpen)
+        door(true);
+    }
+    else
+    {
+      display.showUnknown(uid);
+      Serial.println("Access denied: " + uid);
+      blinker.period = 100;
+      blinker.duration = 50;
+      blinker.state = 1;
+    }
+    delay(500); // Prevent multi-reads
   }
-  else
-  {
-    display.showUnknown(uid);
-    Serial.println("Access denied: " + uid);
-    blinker.period = 100;
-    blinker.duration = 50;
-    blinker.state = 1;
-  }
-
-  mfrc522.PICC_HaltA();
 }

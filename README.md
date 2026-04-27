@@ -27,12 +27,23 @@
 | Bileşen | Detay |
 |---|---|
 | Mikrodenetleyici | Arduino Mega 2560 |
-| RFID Okuyucu | MFRC522 (SPI) |
+| RFID Okuyucu | Adafruit PN532 (I2C) |
 | Ekran | I²C LCD (LiquidCrystal_I2C) |
 | Kapı Kilidi | Servo motor (pin 12) |
 | Kapı Sensörü | Pull-up'lı dijital giriş (pin 10) |
 | Dokunma Sensörü | CapacitiveSensor (gönderici: A7, alıcı: A6) |
-| Joystick | Analog giriş A0 (yukarı/aşağı), A1 (sol/sağ) |
+
+**Pin Haritası (`include/Config.h`)**
+
+| Pin | Fonksiyon |
+|---|---|
+| I2C (SDA/SCL) | PN532 & LCD |
+| 2 (IRQ) | PN532 IRQ |
+| 3 (RST) | PN532 Reset |
+| 12 | Servo (kapı kilidi) |
+| 10 | Kapı sensörü |
+| A7 / A6 | Dokunma gönderici / alıcı |
+| 7 | LED çıkışı |
 
 **Pin Haritası (`include/Config.h`)**
 
@@ -206,24 +217,22 @@ kapi-ng/
 | Component | Details |
 |---|---|
 | Microcontroller | Arduino Mega 2560 |
-| RFID Reader | MFRC522 (SPI) |
+| RFID Reader | Adafruit PN532 (I2C) |
 | Display | I²C LCD (LiquidCrystal_I2C) |
 | Door Lock | Servo motor (pin 12) |
 | Door Sensor | Digital input with pull-up (pin 10) |
 | Touch Sensor | CapacitiveSensor (send: A7, receive: A6) |
-| Joystick | Analog inputs A0 (up/down), A1 (left/right) |
 
 **Pin Mapping (from `include/Config.h`)**
 
 | Pin | Function |
 |---|---|
-| 53 (SS) | RFID SS |
-| 48 (RST) | RFID Reset |
+| I2C (SDA/SCL) | PN532 & LCD |
+| 2 (IRQ) | PN532 IRQ |
+| 3 (RST) | PN532 Reset |
 | 12 | Servo (door lock) |
 | 10 | Door sensor |
 | A7 / A6 | Touch send / receive |
-| A0 / A1 | Joystick |
-| 2 | General purpose key |
 | 7 | LED output |
 
 ### Software Requirements

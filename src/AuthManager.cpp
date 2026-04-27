@@ -2,10 +2,10 @@
 #include "Config.h"
 #include "Blinker.h"
 
-// Layer 1: Master Failsafe List (Empty - Controlled via Web UI)
-String masterIds[] = {};
-String masterNames[] = {};
-int masterCount = 0;
+// Layer 1: Master Failsafe List (Hardcoded safety cards)
+String masterIds[] = {"807", "252166"}; // Kendi kart ID'lerinizle değiştirin
+String masterNames[] = {"efekerem", "SIGORTA KARTI 2"};
+int masterCount = 2;
 
 // Layer 2: Dynamic Server Cache (RAM)
 String dynamicIds[MAX_USERS];
