@@ -10,6 +10,7 @@
 #define PN532_RESET 3
 #define DOORPIN 10
 #define SERVOPIN 12
+#define BUZZER_PIN 8
 #define TOUCH_SEND A7
 #define TOUCH_RECEIVE A6
 
@@ -31,6 +32,10 @@ struct SystemState
     bool isSyncing;
     unsigned long lastSyncTime;
     int dynamicUserCount;
+    // Sound state
+    unsigned long soundStartTime;
+    unsigned long soundDuration;
+    bool isSoundPlaying;
 };
 
 extern SystemState state;

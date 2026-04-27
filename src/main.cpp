@@ -9,6 +9,7 @@
 #include "DisplayManager.h"
 #include "DoorController.h"
 #include "AuthManager.h"
+#include "SoundManager.h"
 
 // Global Objects
 Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
@@ -135,6 +136,7 @@ void setup()
   pinMode(DOORPIN, INPUT_PULLUP);
   pinMode(GPKEY, INPUT_PULLUP);
 
+  sound.begin();
   blinker.open();
 
   nfc.begin();
@@ -161,6 +163,7 @@ void setup()
 void loop()
 {
   blinker.update();
+  sound.update();
   handleSerial();
 
   static unsigned long lastHealthCheck = 0;
@@ -214,6 +217,7 @@ void loop()
     if (tchrate > touchThreshold)
     {
       if (!state.isDoorOpen) {
+        sound.playBeep();
         door(true);
       }
     }
@@ -257,6 +261,7 @@ void loop()
       String userName = getDynamicName(userIdx);
       display.showUser(uid, userName);
       Serial.println("Access granted: " + userName);
+      sound.playSuccess();
       if (state.doorAutoCloseEnabled && !state.isDoorOpen)
         door(true);
     }
@@ -264,6 +269,7 @@ void loop()
     {
       display.showUnknown(uid);
       Serial.println("Access denied: " + uid);
+      sound.playError();
       blinker.period = 100;
       blinker.duration = 50;
       blinker.state = 1;
