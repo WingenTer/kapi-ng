@@ -1,0 +1,17 @@
+[
+    {
+        "username": "efekerem",
+        "passwordHash": "eff93b1d27ee93f57bc7e52b57f0fbe78c08fa9690e11057321473ffe99da2f6",
+        "role": "admin"
+    },
+    {
+        "username": "berra",
+        "passwordHash": "0c1bb930851e777b1ba24b9a496427d3e049428edfde799edd4356d24386c347",
+        "role": "admin"
+    },
+    {
+        "username": "heblushabus",
+        "passwordHash": "3eec7660093f4821a92ea07182e6a418adbe0e641a830e08cccb2ce8ed6d1018",
+        "role": "admin"
+    }
+]

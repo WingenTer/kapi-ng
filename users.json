@@ -1,0 +1,122 @@
+[
+    {
+        "id": "10453",
+        "name": "borakart",
+        "count": -99957,
+        "enabled": true,
+        "lastRead": 1776237321938
+    },
+    {
+        "id": "252166",
+        "name": "omeranahtar",
+        "enabled": true,
+        "schedule": [],
+        "count": 10,
+        "username": "heblushabus",
+        "lastRead": 1776230877608
+    },
+    {
+        "id": "807",
+        "name": "efekeremego",
+        "enabled": true,
+        "schedule": [],
+        "count": 43,
+        "username": "efekerem",
+        "lastRead": 1777286132731
+    },
+    {
+        "id": "151154",
+        "name": "berra",
+        "enabled": true,
+        "schedule": [],
+        "count": 3,
+        "username": "berra",
+        "lastRead": 1777005414446
+    },
+    {
+        "id": "886",
+        "name": "egementuran",
+        "enabled": true,
+        "schedule": [],
+        "count": 37,
+        "username": "egemen",
+        "lastRead": 1777008338740
+    },
+    {
+        "id": "154165",
+        "name": "serkanabi",
+        "enabled": true,
+        "schedule": [],
+        "count": 28,
+        "lastRead": 1777018451886
+    },
+    {
+        "id": "218166",
+        "name": "cakan",
+        "username": "cagkan",
+        "enabled": false,
+        "schedule": [],
+        "count": 31,
+        "lastRead": 1776251359831
+    },
+    {
+        "id": "77168",
+        "name": "gökçe",
+        "enabled": true,
+        "schedule": [],
+        "count": 2,
+        "lastRead": 1767875702283
+    },
+    {
+        "id": "2926",
+        "name": "umut",
+        "enabled": true,
+        "schedule": [],
+        "count": 0,
+        "lastRead": 1776079995693
+    },
+    {
+        "id": "90242",
+        "name": "ucakyapcam1971",
+        "enabled": true,
+        "schedule": [
+            {
+                "start": "12:00",
+                "end": "13:00"
+            },
+            {
+                "start": "15:20",
+                "end": "18:30"
+            }
+        ],
+        "count": 3,
+        "lastRead": 1776697308410
+    },
+    {
+        "id": "72250",
+        "name": "Maltakan",
+        "enabled": true,
+        "schedule": [
+            {
+                "start": "08:00",
+                "end": "10:00"
+            }
+        ]
+    },
+    {
+        "id": "1831",
+        "name": "dilekcip",
+        "enabled": true,
+        "schedule": [],
+        "count": 1,
+        "lastRead": 1776852073758
+    },
+    {
+        "id": "137114",
+        "name": "bertu",
+        "enabled": true,
+        "schedule": [],
+        "count": 7,
+        "lastRead": 1777024452255
+    }
+]

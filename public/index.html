@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapi-NG | Next Gen Access</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+
+</head>
+
+<body>
+    <div id="login-screen" class="login-overlay">
+        <div class="login-card">
+            <div class="login-icon">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <h2>Welcome Back</h2>
+            <p>Secure access to Kapi-NG System</p>
+            <form id="login-form">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="login-username" placeholder="Username" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="login-password" placeholder="Password" required>
+                </div>
+                <div class="login-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="login-remember">
+                        <span class="checkmark"></span>
+                        Remember Me
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary btn-glow">
+                    <span>Login to Dashboard</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </form>
+            <div id="login-error" class="error-text"></div>
+        </div>
+    </div>
+
+    <div class="app-container" id="main-content" style="display: none;">
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-shield-halved"></i>
+                <span>Kapi-NG</span>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-target="dashboard">
+                    <i class="fas fa-house"></i> Dashboard
+                </button>
+                <button class="nav-item admin-only" data-target="cards">
+                    <i class="fas fa-id-card"></i> RFID Cards
+                </button>
+                <button class="nav-item admin-only" data-target="accounts">
+                    <i class="fas fa-users-gear"></i> Web Accounts
+                </button>
+                <button class="nav-item" data-target="logs">
+                    <i class="fas fa-list-ul"></i> System Logs
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="user-initials">AD</div>
+                    <div class="user-details">
+                        <span id="display-username">Admin</span>
+                        <small id="display-role">Administrator</small>
+                    </div>
+                </div>
+                <button id="logout-btn" class="btn-logout" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button id="mobile-menu-toggle" class="btn-icon mobile-only">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="page-title">
+                        <h2 id="current-page-title">Dashboard</h2>
+                    </div>
+                </div>
+                <div class="top-bar-actions">
+                    <button id="sync-btn" class="btn-icon admin-only" title="Sync with Arduino">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                    <div class="status-indicator">
+                        <span class="status-dot"></span>
+                        <span>System Online</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="scroll-content">
+                <!-- Dashboard Tab -->
+                <div id="tab-dashboard" class="tab-content active">
+                    <div class="grid-layout">
+                        <!-- Last Card Alert -->
+                        <div class="card alert-card admin-only" id="last-card-container" style="display: none;">
+                            <div class="alert-icon"><i class="fas fa-rss"></i></div>
+                            <div class="alert-body">
+                                <h4>New Card Detected</h4>
+                                <p id="last-card-id">---</p>
+                            </div>
+                            <button id="quick-add-btn" class="btn-action">Register Now</button>
+                        </div>
+
+                        <!-- Door Control -->
+                        <div class="card control-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-door-open"></i> Door Control</h3>
+                            </div>
+                            <div class="door-visual" id="door-visual-state">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <div class="control-grid">
+                                <button id="open-door-btn" class="btn-success">
+                                    <i class="fas fa-unlock"></i> Open
+                                </button>
+                                <button id="close-door-btn" class="btn-danger">
+                                    <i class="fas fa-lock"></i> Close
+                                </button>
+                            </div>
+                            <div class="hold-mode-section admin-only">
+                                <div class="hold-text">
+                                    <strong>Hold Open Mode</strong>
+                                    <p>Disable auto-close timer</p>
+                                </div>
+                                <label class="ios-switch">
+                                    <input type="checkbox" id="hold-open-toggle">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Sensor Monitoring -->
+                        <div class="card sensor-card admin-only">
+                            <div class="card-header">
+                                <h3><i class="fas fa-fingerprint"></i> Touch Sensor</h3>
+                            </div>
+                            <div class="sensor-display">
+                                <div class="gauge-container">
+                                    <div class="gauge-bar" id="touch-gauge" style="width: 0%"></div>
+                                    <div class="gauge-marker" id="threshold-marker" style="left: 0%"></div>
+                                </div>
+                                <div class="sensor-values">
+                                    <div class="sensor-val-item">
+                                        <small>Current</small>
+                                        <span id="current-touch-val">0</span>
+                                    </div>
+                                    <div class="sensor-val-item">
+                                        <small>Threshold</small>
+                                        <span id="display-threshold-val">10000</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="threshold-control">
+                                <label>Sensitivity Adjustment</label>
+                                <input type="range" id="threshold-slider" min="0" max="30000" step="100">
+                                <button id="save-threshold-btn" class="btn-primary btn-sm btn-block">
+                                    <i class="fas fa-save"></i> Save Threshold
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- System Stats (Placeholder) -->
+
+                        <div class="card stats-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-chart-simple"></i> Quick Stats</h3>
+                            </div>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="stat-users">0</span>
+                                    <span class="stat-label">RFID Users</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="stat-uptime">99.9%</span>
+                                    <span class="stat-label">Uptime</span>
+                                </div>
+                            </div>
+                            <div class="leaderboard-section">
+                                <div class="leaderboard-header">
+                                    <i class="fas fa-trophy"></i>
+                                    <span>Top Access Holders</span>
+                                </div>
+                                <div id="dashboard-leaderboard" class="leaderboard-list">
+                                    <!-- Top users populated via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RFID Cards Tab -->
+                <div id="tab-cards" class="tab-content admin-only">
+                    <div class="section-header">
+                        <h3>Registered RFID Cards</h3>
+                        <button id="open-add-modal" class="btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Add Card
+                        </button>
+                    </div>
+                    <div class="table-card">
+                        <table id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User Name</th>
+                                    <th>Card ID</th>
+                                    <th>Usage</th>
+                                    <th>Access</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Web Accounts Tab -->
+                <div id="tab-accounts" class="tab-content admin-only">
+                    <div class="section-header">
+                        <h3>Web Access Accounts</h3>
+                        <button id="open-web-user-modal" class="btn-primary btn-sm">
+                            <i class="fas fa-user-plus"></i> Create Account
+                        </button>
+                    </div>
+                    <div class="table-card">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="web-users-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- System Logs Tab -->
+                <div id="tab-logs" class="tab-content">
+                    <div class="section-header">
+                        <h3>System Event Logs</h3>
+                        <div class="log-controls">
+                            <input type="date" id="log-date-filter" class="log-date-picker">
+                            <select id="log-type-filter">
+                                <option value="all">All Logs</option>
+                                <option value="girisler">Access Logs</option>
+                                <option value="web">Web Activity</option>
+                                <option value="guncelleme">Updates & Sync</option>
+                            </select>
+                            <button id="refresh-logs-btn" class="btn-icon-sm">
+                                <i class="fas fa-rotate"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="log-container">
+                        <div id="log-viewer" class="log-viewer">
+                            <!-- Logs will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div id="add-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add RFID Card</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <form id="add-user-form">
+                    <div class="form-group">
+                        <label>User Name</label>
+                        <input type="text" id="user-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Card ID</label>
+                        <input type="text" id="user-id" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Action Password</label>
+                        <input type="password" id="action-password" required>
+                    </div>
+                    <div class="schedule-section">
+                        <label>Access Schedule (Optional)</label>
+                        <div id="add-schedule-list" class="schedule-list"></div>
+                        <button type="button" id="add-slot-btn" class="btn-ghost btn-sm">
+                            <i class="fas fa-plus"></i> Add Time Slot
+                        </button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-ghost close-modal">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Card</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Schedule Modal -->
+        <div id="schedule-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Manage Access Schedule</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Set operating hours for <strong id="schedule-user-name">User</strong></p>
+                    <div id="modal-schedule-list" class="schedule-list"></div>
+                    <button type="button" id="modal-add-slot-btn" class="btn-ghost btn-sm">
+                        <i class="fas fa-plus"></i> Add Time Slot
+                    </button>
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label>Action Password</label>
+                        <input type="password" id="schedule-action-password" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-ghost close-modal">Cancel</button>
+                    <button type="button" id="save-schedule-btn" class="btn-primary">Save Schedule</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="web-user-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create Web Account</h3>
+                    <button class="close-modal">&times;</button>
+                </div>
+                <form id="add-web-user-form">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="web-username" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="web-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select id="web-role">
+                            <option value="user">Regular User</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-ghost close-modal">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
