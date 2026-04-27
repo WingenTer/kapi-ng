@@ -17,7 +17,7 @@
 
 // Constants
 #define MAX_USERS 50
-#define TOUCH_THRESHOLD 10000
+extern long touchThreshold;
 const unsigned long DEFAULT_TIMEOUT = 2000;
 
 // System State Structure
