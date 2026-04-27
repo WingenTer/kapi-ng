@@ -1,185 +1,6 @@
-# kapi-ng — Next Generation Door Access System
+# kapi-ng — Yeni Nesil Kapı Erişim Sistemi
 
-> 🇹🇷 Türkçe açıklama aşağıda yer almaktadır. | 🇬🇧 English description follows below.
-
----
-
-## 🇬🇧 English
-
-### Overview
-
-**kapi-ng** is an Arduino-based smart door access control system with a Node.js web interface. It combines RFID card authentication, capacitive touch sensing, and a real-time web dashboard to manage physical door access.
-
-### Features
-
-- 🔑 **RFID Access Control** — Register and manage up to 50 RFID cards
-- 👆 **Capacitive Touch Sensor** — Open the door with a touch (configurable threshold)
-- 🌐 **Web Dashboard** — Real-time control panel at `http://localhost:3000`
-- 🗓️ **Access Schedules** — Restrict individual cards to specific time windows
-- 🔒 **Role-Based Auth** — Admin and regular-user roles for the web interface
-- 🔁 **Hold Open Mode** — Keep the door open and disable auto-close
-- 📊 **Usage Statistics** — Per-user access counters and last-read timestamps
-- 📋 **Daily Log Files** — Categorized, date-rotated logs in the `/logs` directory
-- 🔄 **Auto-Sync** — Arduino is re-synced every minute and on every change
-
-### Hardware Requirements
-
-| Component | Details |
-|---|---|
-| Microcontroller | Arduino Mega 2560 |
-| RFID Reader | MFRC522 (SPI) |
-| Display | I²C LCD (LiquidCrystal_I2C) |
-| Door Lock | Servo motor (pin 12) |
-| Door Sensor | Digital input with pull-up (pin 10) |
-| Touch Sensor | CapacitiveSensor (send: A7, receive: A6) |
-| Joystick | Analog inputs A0 (up/down), A1 (left/right) |
-
-**Pin Mapping (from `include/Config.h`)**
-
-| Pin | Function |
-|---|---|
-| 53 (SS) | RFID SS |
-| 48 (RST) | RFID Reset |
-| 12 | Servo (door lock) |
-| 10 | Door sensor |
-| A7 / A6 | Touch send / receive |
-| A0 / A1 | Joystick |
-| 2 | General purpose key |
-| 7 | LED output |
-
-### Software Requirements
-
-- **Node.js** ≥ 18
-- **PlatformIO** (for Arduino firmware)
-- A Linux host with the Arduino connected via USB
-
-### Installation
-
-#### 1. Clone the repository
-
-```bash
-git clone https://github.com/WingenTer/kapi-ng.git
-cd kapi-ng
-```
-
-#### 2. Flash the Arduino firmware
-
-```bash
-pio run --target upload
-```
-
-#### 3. Install Node.js dependencies
-
-```bash
-npm install
-```
-
-#### 4. Configure the serial port
-
-Open `server.js` and update `PORT_PATH` to match your Arduino device:
-
-```js
-const PORT_PATH = "/dev/serial/by-id/usb-Arduino...";
-```
-
-#### 5. Start the server
-
-```bash
-node server.js
-```
-
-The web interface will be available at **http://localhost:3000**.
-
-### Default Credentials
-
-| Username | Password |
-|---|---|
-| `admin` | `admin` |
-
-> ⚠️ Change the default password immediately after first login.
-
-### Serial Protocol (Node.js ↔ Arduino)
-
-All commands are plain text strings terminated with `\n`.
-
-| Command | Direction | Description |
-|---|---|---|
-| `kapi` | → Arduino | Open the door |
-| `close` | → Arduino | Close the door |
-| `CLR` | → Arduino | Clear all users |
-| `USR:ID:NAME` | → Arduino | Add an RFID user |
-| `SET_TCH:VALUE` | → Arduino | Set touch threshold |
-| `HOLD_ON` | → Arduino | Enable hold-open mode |
-| `HOLD_OFF` | → Arduino | Disable hold-open mode |
-| `REQ_USERS` | ← Arduino | Request user list from server |
-| `New card: ID` | ← Arduino | Newly scanned card UID |
-| `Access granted: NAME` | ← Arduino | Successful RFID authentication |
-| `TCH:VALUE` | ← Arduino | Live touch sensor reading |
-
-### REST API Endpoints
-
-All endpoints require a logged-in session (cookie-based).
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/login` | — | Log in |
-| POST | `/api/logout` | User | Log out |
-| GET | `/api/auth-check` | — | Check session |
-| GET | `/api/users` | User | List RFID users |
-| POST | `/api/users` | Admin | Add RFID user |
-| DELETE | `/api/users/:id` | Admin | Remove RFID user |
-| PATCH | `/api/users/:id/toggle` | Admin | Enable/disable user |
-| PATCH | `/api/users/:id/schedule` | Admin | Set time schedule |
-| GET | `/api/door/open` | User | Open door |
-| GET | `/api/door/close` | User | Close door |
-| GET | `/api/door/hold` | Admin | Toggle hold-open |
-| POST | `/api/sync` | Admin | Force Arduino sync |
-| GET | `/api/logs` | User | View log entries |
-| GET | `/api/config` | User | Get configuration |
-| POST | `/api/config/threshold` | Admin | Update touch threshold |
-| GET | `/api/web-users` | Admin | List web accounts |
-| POST | `/api/web-users` | Admin | Create web account |
-| DELETE | `/api/web-users/:username` | Admin | Delete web account |
-
-### Log System
-
-Logs are stored under `/logs/YYYY-MM-DD/` and rotated daily.
-
-| File | Log Types | Contents |
-|---|---|---|
-| `girisler.log` | `DOOR`, `STATS`, `RFID`, `KART` | Access and card events |
-| `web.log` | `WEB`, `AUTH`, `API` | Web logins and API calls |
-| `guncelleme.log` | `SYNC`, `CONFIG`, `UPDATE`, `SYSTEM` | Config and sync changes |
-| `all.log` | All | Aggregated log |
-| `other.log` | Everything else | Uncategorized events |
-
-### Project Structure
-
-```
-kapi-ng/
-├── server.js           # Node.js server (API + serial communication)
-├── public/
-│   ├── index.html      # Web dashboard (single-page app)
-│   ├── script.js       # Frontend JavaScript
-│   └── style.css       # Stylesheet
-├── src/
-│   ├── main.cpp        # Arduino main loop
-│   ├── AuthManager.cpp # RFID user storage and lookup
-│   ├── DoorController.cpp # Servo door control
-│   ├── DisplayManager.cpp # I²C LCD management
-│   └── Blinker.cpp     # LED blinker utility
-├── include/
-│   ├── Config.h        # Pin definitions and constants
-│   ├── AuthManager.h
-│   ├── DoorController.h
-│   ├── DisplayManager.h
-│   └── Blinker.h
-├── users.json          # RFID user database
-├── web_users.json      # Web interface accounts
-├── config.json         # Runtime configuration
-├── platformio.ini      # PlatformIO build config
-└── package.json        # Node.js dependencies
-```
+> 🇹🇷 **Türkçe** | [🇬🇧 English](#-english)
 
 ---
 
@@ -230,7 +51,7 @@ kapi-ng/
 
 - **Node.js** ≥ 18
 - **PlatformIO** (Arduino firmware için)
-- Arduino'nun USB ile bağlı olduğu bir Linux makine
+- Arduino'nun USB ile bağlı olduğu bir bilgisayar
 
 ### Kurulum
 
@@ -258,7 +79,7 @@ npm install
 `server.js` dosyasını açın ve `PORT_PATH` değerini Arduino aygıtınıza göre güncelleyin:
 
 ```js
-const PORT_PATH = "/dev/serial/by-id/usb-Arduino...";
+const PORT_PATH = "COM3"; // Windows için COM portu, Linux için /dev/ttyUSB0 vb.
 ```
 
 #### 5. Sunucuyu başlatın
@@ -358,4 +179,171 @@ kapi-ng/
 ├── config.json         # Çalışma zamanı yapılandırması
 ├── platformio.ini      # PlatformIO derleme yapılandırması
 └── package.json        # Node.js bağımlılıkları
+```
+
+---
+
+## 🇬🇧 English
+
+### Overview
+
+**kapi-ng** is an Arduino-based smart door access control system with a Node.js web interface. It combines RFID card authentication, capacitive touch sensing, and a real-time web dashboard to manage physical door access.
+
+### Features
+
+- 🔑 **RFID Access Control** — Register and manage up to 50 RFID cards
+- 👆 **Capacitive Touch Sensor** — Open the door with a touch (configurable threshold)
+- 🌐 **Web Dashboard** — Real-time control panel at `http://localhost:3000`
+- 🗓️ **Access Schedules** — Restrict individual cards to specific time windows
+- 🔒 **Role-Based Auth** — Admin and regular-user roles for the web interface
+- 🔁 **Hold Open Mode** — Keep the door open and disable auto-close
+- 📊 **Usage Statistics** — Per-user access counters and last-read timestamps
+- 📋 **Daily Log Files** — Categorized, date-rotated logs in the `/logs` directory
+- 🔄 **Auto-Sync** — Arduino is re-synced every minute and on every change
+
+### Hardware Requirements
+
+| Component | Details |
+|---|---|
+| Microcontroller | Arduino Mega 2560 |
+| RFID Reader | MFRC522 (SPI) |
+| Display | I²C LCD (LiquidCrystal_I2C) |
+| Door Lock | Servo motor (pin 12) |
+| Door Sensor | Digital input with pull-up (pin 10) |
+| Touch Sensor | CapacitiveSensor (send: A7, receive: A6) |
+| Joystick | Analog inputs A0 (up/down), A1 (left/right) |
+
+**Pin Mapping (from `include/Config.h`)**
+
+| Pin | Function |
+|---|---|
+| 53 (SS) | RFID SS |
+| 48 (RST) | RFID Reset |
+| 12 | Servo (door lock) |
+| 10 | Door sensor |
+| A7 / A6 | Touch send / receive |
+| A0 / A1 | Joystick |
+| 2 | General purpose key |
+| 7 | LED output |
+
+### Software Requirements
+
+- **Node.js** ≥ 18
+- **PlatformIO** (for Arduino firmware)
+- A computer with the Arduino connected via USB
+
+### Installation
+
+#### 1. Clone the repository
+
+```bash
+git clone https://github.com/WingenTer/kapi-ng.git
+cd kapi-ng
+```
+
+#### 2. Flash the Arduino firmware
+
+```bash
+pio run --target upload
+```
+
+#### 3. Install Node.js dependencies
+
+```bash
+npm install
+```
+
+#### 4. Configure the serial port
+
+Open `server.js` and update `PORT_PATH` to match your Arduino device:
+
+```js
+const PORT_PATH = "COM3"; // COM port for Windows, /dev/ttyUSB0 for Linux etc.
+```
+
+#### 5. Start the server
+
+```bash
+node server.js
+```
+
+The web interface will be available at **http://localhost:3000**.
+
+### Default Credentials
+
+| Username | Password |
+|---|---|
+| `admin` | `admin` |
+
+> ⚠️ Change the default password immediately after first login.
+
+### Serial Protocol (Node.js ↔ Arduino)
+
+All commands are plain text strings terminated with `\n`.
+
+| Command | Direction | Description |
+|---|---|---|
+| `kapi` | → Arduino | Open the door |
+| `close` | → Arduino | Close the door |
+| `CLR` | → Arduino | Clear all users |
+| `USR:ID:NAME` | → Arduino | Add an RFID user |
+| `SET_TCH:VALUE` | → Arduino | Set touch threshold |
+| `HOLD_ON` | → Arduino | Enable hold-open mode |
+| `HOLD_OFF` | → Arduino | Disable hold-open mode |
+| `REQ_USERS` | ← Arduino | Request user list from server |
+| `New card: ID` | ← Arduino | Newly scanned card UID |
+| `Access granted: NAME` | ← Arduino | Successful RFID authentication |
+| `TCH:VALUE` | ← Arduino | Live touch sensor reading |
+
+### REST API Endpoints
+
+All endpoints require a logged-in session (cookie-based).
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/login` | — | Log in |
+| POST | `/api/logout` | User | Log out |
+| GET | `/api/auth-check` | — | Check session |
+| GET | `/api/users` | User | List RFID users |
+| POST | `/api/users` | Admin | Add RFID user |
+| DELETE | `/api/users/:id` | Admin | Remove RFID user |
+| PATCH | `/api/users/:id/toggle` | Admin | Enable/disable user |
+| PATCH | `/api/users/:id/schedule` | Admin | Set time schedule |
+| GET | `/api/door/open` | User | Open door |
+| GET | `/api/door/close` | User | Close door |
+| GET | `/api/door/hold` | Admin | Toggle hold-open |
+| POST | `/api/sync` | Admin | Force Arduino sync |
+| GET | `/api/logs` | User | View log entries |
+| GET | `/api/config` | User | Get configuration |
+| POST | `/api/config/threshold` | Admin | Update touch threshold |
+| GET | `/api/web-users` | Admin | List web accounts |
+| POST | `/api/web-users` | Admin | Create web account |
+| DELETE | `/api/web-users/:username` | Admin | Delete web account |
+
+### Log System
+
+Logs are stored under `/logs/YYYY-MM-DD/` and rotated daily.
+
+| File | Log Types | Contents |
+|---|---|---|
+| `girisler.log` | `DOOR`, `STATS`, `RFID`, `KART` | Access and card events |
+| `web.log` | `WEB`, `AUTH`, `API` | Web logins and API calls |
+| `guncelleme.log` | `SYNC`, `CONFIG`, `UPDATE`, `SYSTEM` | Config and sync changes |
+| `all.log` | All | Aggregated log |
+| `other.log` | Everything else | Uncategorized events |
+
+### Project Structure (Partial)
+
+```
+kapi-ng/
+├── server.js           # Node.js server (API + serial communication)
+├── public/
+│   ├── index.html      # Web dashboard (single-page app)
+│   ├── script.js       # Frontend JavaScript
+│   └── style.css       # Stylesheet
+├── src/                # Arduino source files
+├── include/            # Arduino header files
+├── users.json          # RFID user database
+├── web_users.json      # Web interface accounts
+└── config.json         # Runtime configuration
 ```
