@@ -26,6 +26,7 @@ SystemState state = {
     .isSyncing = false,
     .lastSyncTime = 0,
     .dynamicUserCount = 0};
+long touchThreshold = 10000;
 
 // Serial Buffer
 String serialBuffer = "";
@@ -90,10 +91,16 @@ void handleSerial()
         door(false);
         Serial.println("HOLD_MODE: OFF");
       }
-      else if (serialBuffer == "kilit")
+      else if (serialBuffer.startsWith("SET_TTH:"))
       {
-        door(false);
-        Serial.println("kitlendi");
+        touchThreshold = serialBuffer.substring(8).toInt();
+        Serial.print("TTH_SET:");
+        Serial.println(touchThreshold);
+      }
+      else if (serialBuffer == "GET_TTH")
+      {
+        Serial.print("TTH:");
+        Serial.println(touchThreshold);
       }
       serialBuffer = "";
     }
@@ -157,6 +164,13 @@ void loop()
   }
 
   long tchrate = touch.capacitiveSensor(30);
+  
+  static unsigned long lastTchReport = 0;
+  if (millis() - lastTchReport > 200) { // Report every 200ms
+    Serial.print("TCH:");
+    Serial.println(tchrate);
+    lastTchReport = millis();
+  }
 
   static bool debouncedSensorState = false;
   static unsigned long lastSensorChange = 0;
@@ -190,7 +204,7 @@ void loop()
 
   if (state.doorAutoCloseEnabled)
   {
-    if (analogRead(JOYDIK) < 300 || tchrate > TOUCH_THRESHOLD)
+    if (analogRead(JOYDIK) < 300 || tchrate > touchThreshold)
     {
       if (!state.isDoorOpen) {
         door(true);
