@@ -92,7 +92,7 @@ void handleSerial()
         door(false);
         Serial.println("HOLD_MODE: OFF");
       }
-      else if (serialBuffer.startsWith("SET_TTH:"))
+      else if (serialBuffer.startsWith("SET_TCH:"))
       {
         touchThreshold = serialBuffer.substring(8).toInt();
         Serial.print("TTH_SET:");
